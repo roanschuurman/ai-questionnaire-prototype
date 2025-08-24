@@ -504,45 +504,74 @@ def fallback_question(session_id: str, sequence: int, target_type: str = "free_t
     )
 
 def generate_summary_step(session_id: str, answers: Dict[str, Any]) -> Step:
-    """Generate an AI-powered summary of the conversation."""
+    """Generate a detailed AI-powered summary of all questions and answers."""
     
-    # Create context from all answers
-    context_parts = []
+    # Load questions to get the actual question texts
+    questions_config = load_questions_config()
+    parsed_questions = parse_questions_from_config(questions_config)
+    
+    # Create detailed context with questions and answers
+    qa_pairs = []
     for q_id, answer_data in answers.items():
         answer_value = answer_data.get('value', 'No answer')
-        context_parts.append(f"- {answer_value}")
+        answer_kind = answer_data.get('kind', 'unknown')
+        
+        # Extract question number from q_id (e.g., "q_ai_1" -> 1)
+        try:
+            q_number = int(q_id.split('_')[-1])
+            question_text = parsed_questions.get(q_number, {}).get('text', f'Question {q_number}')
+        except:
+            question_text = f'Question for {q_id}'
+        
+        qa_pairs.append(f"Q: {question_text}\nA: {answer_value}")
     
-    context_text = "\n".join(context_parts)
-    total_questions = get_total_questions()
+    qa_text = "\n\n".join(qa_pairs)
+    total_questions = len(parsed_questions)
     
     try:
-        # Generate therapeutic summary using AI
+        # Generate comprehensive summary using AI
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system", 
-                    "content": """You are a compassionate therapeutic assistant. Create a supportive summary that:
-                    1. Acknowledges their courage in self-reflection
-                    2. Highlights insights about their inner voice and emotions
-                    3. Reinforces their commitment to positive action
-                    4. Uses warm, encouraging language
-                    Keep it to 3-4 sentences and focus on their strength and growth potential."""
+                    "content": """You are a skilled therapeutic summarizer. Create a comprehensive, personalized summary that:
+                    
+                    1. SPECIFIC CONTENT: Reference their actual answers and insights, not generic statements
+                    2. THERAPEUTIC INSIGHTS: Identify patterns in their responses about their inner voice, emotions, and behaviors
+                    3. STRENGTHS & PROGRESS: Highlight their self-awareness, willingness to change, and specific commitments
+                    4. ACTIONABLE REFLECTION: Connect their answers to show a coherent picture of their journey
+                    5. ENCOURAGING TONE: Warm, professional, and validating
+                    
+                    Structure: 2-3 paragraphs, 4-6 sentences total. Be specific to their responses, not generic."""
                 },
                 {
                     "role": "user", 
-                    "content": f"Based on these therapeutic self-reflection answers:\n{context_text}\n\nCreate a supportive summary that validates their journey and growth."
+                    "content": f"""Please create a detailed therapeutic summary based on these specific question-answer pairs from a self-reflection session:
+
+{qa_text}
+
+Create a summary that:
+- References their specific answers (the voice they identified, emotions they selected, etc.)
+- Acknowledges their insights about their inner voice and its impact
+- Validates their commitment to the values/actions they mentioned
+- Highlights their willingness to observe and accept difficult emotions
+- Encourages their continued growth journey
+
+Make it personal and specific to what they shared, not a generic response."""
                 }
             ],
-            max_tokens=300,
-            temperature=0.7
+            max_tokens=400,
+            temperature=0.6
         )
         
         summary = response.choices[0].message.content.strip()
         
     except Exception as e:
         print(f"Error generating AI summary: {e}")
-        summary = f"Thank you for your openness and courage in exploring your inner voice. Your willingness to reflect and commit to positive change shows real strength. This journey of self-awareness is a powerful step forward."
+        # Create a basic fallback summary with their actual content
+        first_answer = list(answers.values())[0].get('value', 'your inner voice') if answers else 'your inner voice'
+        summary = f"Thank you for exploring your relationship with {first_answer} and reflecting on its impact on your life. Your willingness to examine these patterns and commit to positive change demonstrates real courage and self-awareness. This kind of honest self-reflection is a powerful foundation for continued growth and healing."
     
     return Step(
         id="step_summary",

@@ -54,6 +54,41 @@ The system supports four input types, automatically determined by AI analysis:
 - iOS device or Android device for testing
 - OpenAI API key
 
+## 🚀 Quick Start (Automated)
+
+The easiest way to run the entire system:
+
+1. **Clone and setup:**
+   ```bash
+   git clone https://github.com/roanschuurman/ai-questionnaire-prototype.git
+   cd ai-questionnaire-prototype
+   ```
+
+2. **Create environment file:**
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your OpenAI API key
+   ```
+
+3. **Start everything:**
+   ```bash
+   ./start.sh
+   ```
+
+4. **Stop everything when done:**
+   ```bash
+   ./shutdown.sh
+   ```
+
+The start script will automatically:
+- Create and activate Python virtual environment
+- Install backend dependencies
+- Start the backend server in background
+- Launch the Flutter mobile app
+- Show logs and server status
+
+## 🔧 Manual Setup (Alternative)
+
 ### Backend Setup
 
 1. Clone the repository
