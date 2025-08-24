@@ -25,10 +25,7 @@ load_dotenv()
 app = FastAPI(title="AI Question Orchestrator (Prototype)")
 
 # Initialize OpenAI client
-openai_client = OpenAI()  # Uses OPENAI_API_KEY from environment
-
-# Initialize OpenAI client
-openai_client = openai.OpenAI(
+openai_client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY", "your-openai-api-key-here")
 )
 
